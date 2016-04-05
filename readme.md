@@ -1,14 +1,14 @@
 #Uber ultimate robot washing MANchine
 
 ##Init
-Install mongoBD
 
+Install mongoDB
 
-
+Install a suitable code editor (VS code - code.visualstudio.com)
  
 In project folder open terminal and run
 
-```
+```javascript
 npm install -g nodemon
 
 npm install
@@ -31,12 +31,6 @@ To start the web service open the terminal in the project directory and run:
 ```
 nodemon server.js
 ```
- 
 
-
-
-
- 
-```javascript
-code example
-```
+##Edit
+The server code is placed in server.js. To add a new route (rest call) add the route in server under routes and then create the function in the routes folder
