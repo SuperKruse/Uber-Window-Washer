@@ -33,4 +33,16 @@ nodemon server.js
 ```
 
 ##Edit
-The server code is placed in server.js. To add a new route (rest call) add the route in server under routes and then create the function in the routes folder
+The server code is placed in server.js. To add a new route (rest call) add the route in server under routes and then create the function in the routes folder.
+
+
+##Testing
+The routes can be tested from the browser, just insert the url into the browser and see the magic happend.
+It is also possible to use a rest client ([Postman](https://chrome.google.com/webstore/detail/postman/fhbjgbiflinjbdggehcddcbncdddomop))
+
+```
+http://localhost:8080/api/getBears
+```
+```
+http://localhost:8080/api/insertBearTwo/"name of bear"
+```
