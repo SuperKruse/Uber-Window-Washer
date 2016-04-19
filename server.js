@@ -3,6 +3,7 @@ var express = require('express');        // call express
 var app = express();                 // define our app using express
 var bodyParser = require('body-parser');
 var testCalls = require('./routes/test');
+var robotCalls = require('./routes/robotControl');
 
 
 // configure app to use bodyParser()
@@ -56,6 +57,13 @@ router.get('/bear', testCalls.bear)
 router.get('/bearById/:id', testCalls.bearById)
 router.get('/getBears', testCalls.getBears)
 router.post('/insert/:id', testCalls.insertBear)
+router.post('/start/', robotCalls.start)
+router.post('/stop/', robotCalls.stop)
+router.get('/weather/', robotCalls.weather)
+router.get('/status/', robotCalls.status)
+router.get('/getWeather/', robotCalls.getWeather)
+
+
 
 
 // all of our routes will be prefixed with /api
