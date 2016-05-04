@@ -14,7 +14,7 @@ app.use(bodyParser.json());
 var port = process.env.PORT || 8080;        // set our port
 
 //databse config
-MongoClient = require('mongodb').MongoClient; //mongodb
+//MongoClient = require('mongodb').MongoClient; //mongodb
 assert = require('assert');                 //something for mongoDB
 ObjectId = require('mongodb').ObjectID;     // uid?
 dbUrl = 'mongodb://localhost:27017/robot'; // databse url
@@ -22,14 +22,14 @@ db = require('mongodb').db;
 
 
 //init db connection
-MongoClient.connect(dbUrl, function(err, result) {
-    if (err) {
-        throw err;
-    } else {
-        console.log('Successfully connected to the database');
-        db = result //sets the db connection
-    }
-});
+// MongoClient.connect(dbUrl, function(err, result) {
+//     if (err) {
+//         throw err;
+//     } else {
+//         console.log('Successfully connected to the database');
+//         db = result //sets the db connection
+//     }
+// });
 
 
 
