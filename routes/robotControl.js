@@ -1,4 +1,7 @@
 var syncInterval = 30000;
+var controlVariablesPath = "C:/Users/super/Dropbox/TVPROB-01/Navigation/";
+var controlVariablesFileName = "ControlVariables.txt";
+var controlVariables = "C:/Users/super/Dropbox/TVPROB-01/Navigation/ControlVariables.txt";
 
 var weatherApiKey = '92560990856b47ee7dfbba79557d93de'
 var http = require('http');
@@ -19,7 +22,7 @@ var startRobot = function () {
     //is finished
 
     console.log("Starting Robot...");
-    var contents = file.writeFileSync("./var.txt", fileContent);
+    var contents = file.writeFileSync(controlVariables, fileContent);
     console.log(contents);
 
     console.log(" done ...");
@@ -36,14 +39,14 @@ var stopRobot = function () {
     //is finished
 
     console.log("Stopping Robot...");
-    var contents = file.writeFileSync("./var.txt", fileContent);
+    var contents = file.writeFileSync(controlVariables, fileContent);
     console.log(contents);
     console.log(" done ...");
 }
 
 var cleaningStatus = function () {
-    var dir = "C:\Users\super\Documents\github\UberUltimateRoboWashingMANchine\var.txt"
-    var content = file.readFileSync('var.txt', 'utf8');
+    var dir = controlVariablesPath;
+    var content = file.readFileSync(controlVariables, 'utf8');
     //console.log(content.toString());
     //console.log(" done ...");
     contentArray = content.split("\r\n");

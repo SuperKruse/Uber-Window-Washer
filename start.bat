@@ -1,0 +1,1 @@
+mongod --dbpath C:\Users\super\Documents\github\UberUltimateRoboWashingMANchine\data
