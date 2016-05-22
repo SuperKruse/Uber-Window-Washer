@@ -1,5 +1,10 @@
 #Uber ultimate robot washing MANchine
 
+##Project overview
+The routes for the rest calls are defined in server.js and the functions are placed in routes > robotControl.js
+Alle the functions are documented in the file
+
+
 ##Init
 
 Install mongoDB
