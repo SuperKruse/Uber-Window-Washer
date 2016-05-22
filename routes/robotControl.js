@@ -1,6 +1,5 @@
 var syncInterval = 30000;
-var controlVariablesPath = "C:/Users/super/Dropbox/TVPROB-01/Navigation/";
-var controlVariablesFileName = "ControlVariables.txt";
+var maxWindSpeed = 9;
 var controlVariables = "C:/Users/super/Dropbox/TVPROB-01/Navigation/ControlVariables.txt";
 
 var weatherApiKey = '92560990856b47ee7dfbba79557d93de'
@@ -11,8 +10,12 @@ var weatherData = "";
 var isDone = false;
 
 
-var startRobot = function () {
 
+/**
+ * Starting the robot by writing to the communication file
+ */
+var startRobot = function () {
+    //The content of the file \r\n is to make line shift
     var fileContent =
         "   1.0000000e+00\r\n" +
         "   0.0000000e+00\r\n" +
@@ -22,12 +25,16 @@ var startRobot = function () {
     //is finished
 
     console.log("Starting Robot...");
+    //Writting to the file
     var contents = file.writeFileSync(controlVariables, fileContent);
     console.log(contents);
 
     console.log(" done ...");
 }
 
+/**
+ * Stopping the robot by writing to the communication file
+ */
 var stopRobot = function () {
 
     var fileContent =
@@ -44,13 +51,24 @@ var stopRobot = function () {
     console.log(" done ...");
 }
 
+/**
+ * reading the content of the communication file.
+ * the file is loaded in and split into an array efter every \r\n and according to what is read 
+ * isDone, robotIsRunning is set.
+ * isDone == true if the robot is done cleaning the windows or if the robot is back to the start position after the user have stopped it
+ * robotIsRunning == true if the robot is in teh progress of cleaning
+ */
 var cleaningStatus = function () {
-    var dir = controlVariablesPath;
+
+    //loading in the communication file
     var content = file.readFileSync(controlVariables, 'utf8');
-    //console.log(content.toString());
-    //console.log(" done ...");
+    //splitting the array
     contentArray = content.split("\r\n");
-    //console.log(contentArray[2]);
+
+
+    // if contentArray[0] == 1 the robot is running
+    // if contentArray[1] == 1 the robot is not running
+    // if contentArray[2] == 1 the robot is back at start position
 
     if (contentArray[2] == 1.0000000e+00) {
         isDone = true
@@ -67,43 +85,71 @@ var cleaningStatus = function () {
     }
 }
 
+/**
+ * Checking on the weather to see if it is safe to be operating
+ */
 var safeWeather = function () {
 
-  console.log(getNewWeather())
+    getNewWeather(); //updates the weather
+
+    //if the weather data exists  if the wind speed is < maxWindSpeed the robot is stopped and returns to start position
+    if (weatherData.wind && weatherData.wind.speed) {
+        if (weatherData.wind.speed > maxWindSpeed) {
+            stopRobot()
+            console.log('too much wind');
+        }
+        console.log('controlling wind speed');
+
+    }
 }
 
-//see when the robot is done cleaning
+//Statring a recurring event 
+//Runs cleaningStatus every "syncInterval" 
 setInterval(cleaningStatus, syncInterval)
+//Runs safeWeather
+setInterval(safeWeather, 1 * 60000)
+
 //setInterval(safeWeather, 5000)
 
 
-
-//adds a json object to a collection (db)
+/**
+ * The start-command called from the rest service
+ * calls startRobot();
+ * sets robotIsRunning = true;
+ * and return 200: robot started
+ */
 exports.start = function (req, res) {
     startRobot();
     robotIsRunning = true;
-    startRobot();
+    // startRobot();
     res.status(200).json({ msg: "robot started" });
 };
 
+/**
+ * The stop-command called from the rest service
+ * calls stopRobot();
+ * sets robotIsRunning = false;
+ * and return 200: robot stopped
+ */
 exports.stop = function (req, res) {
     stopRobot();
     robotIsRunning = false
     res.status(200).json({ msg: "robot stopped" });
 };
 
-
+/**
+ * The status-command called from the rest service
+ * returns 200 and robotIsRunning, isDone,
+ */
 exports.status = function (req, res) {
     console.log('robotIsRunning ' + robotIsRunning);
-    if (isDone)
-        res.status(200).json({ robotIsRunning: robotIsRunning, isDone: isDone });
-    else //If user stopped
-        res.status(200).json({ robotIsRunning: robotIsRunning, isDone: isDone });
-    // res.status(200).json({ msg: robotIsRunning });
-    //else the robot is running
-
+    res.status(200).json({ robotIsRunning: robotIsRunning, isDone: isDone });
 };
 
+/**
+ * updates weatherData
+ * If the last downloaded weather data us older than 10 minutes it downloads new data from openweather
+ */
 getNewWeather = function () {
 
     //waiting 10 minutes between updating weather info ( provide only updates every ten minutes)
@@ -122,7 +168,7 @@ getNewWeather = function () {
             });
             response.on('end', function () {
                 var jsonObject = JSON.parse(body);
-                
+
 
                 jsonObject.created_at = new Date();
                 weatherData = jsonObject;
@@ -133,14 +179,15 @@ getNewWeather = function () {
 
 }
 
-//openweathermap api adress for getting weather from århus
-// aarhus city id 2624647
-//api id 92560990856b47ee7dfbba79557d93d
 
-//http://openweathermap.org/Maps?zoom=12&lat=56.153&lon=10.2049&layers=B0FTTFF
-// var wUrl = 'http://api.openweathermap.org/data/2.5/weather?id=2172797&units=metric&APPID=92560990856b47ee7dfbba79557d93de'
+//api id 92560990856b47ee7dfbba79557d93d
 var wUrl = 'http://api.openweathermap.org/data/2.5/weather?lat=56.153&lon=10.2049&units=metric&APPID=92560990856b47ee7dfbba79557d93de'
 
+/**
+ * the weather-command called from the rest service
+ * If the last downloaded weather data us older than 10 minutes it downloads new data from openweather
+ * and returns 200 and the weather data
+ */
 exports.weather = function (req, res) {
 
     //waiting 10 minutes between updating weather info ( provide only updates every ten minutes)
@@ -169,22 +216,5 @@ exports.weather = function (req, res) {
             });
         });
     }
-
-}
-
-
-//test function
-exports.getWeather = function (req, res) {
-
-    // db.collection('weather').find().sort({ $natural: -1 }).limit(1).toArray(function (err, result) {
-    //     if (err) {
-    //         throw err;
-    //     } else {
-    //         res.status(200).json(result);
-    //         // console.log(result);
-    //     }
-    // })
-
-    res.status(200).json(weatherData);
 
 }
