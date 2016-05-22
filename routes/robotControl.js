@@ -1,5 +1,6 @@
 var syncInterval = 30000;
-var maxWindSpeed = 9;
+var maxWindSpeed = 10;
+var minTemp = 3;
 var controlVariables = "C:/Users/super/Dropbox/TVPROB-01/Navigation/ControlVariables.txt";
 
 var weatherApiKey = '92560990856b47ee7dfbba79557d93de'
@@ -94,127 +95,135 @@ var safeWeather = function () {
 
     //if the weather data exists  if the wind speed is < maxWindSpeed the robot is stopped and returns to start position
     if (weatherData.wind && weatherData.wind.speed) {
+        console.log('controlling wind speed');
         if (weatherData.wind.speed > maxWindSpeed) {
             stopRobot()
             console.log('too much wind');
         }
-        console.log('controlling wind speed');
+    }
 
+    if (weatherData.main && weatherData.main.temp) {
+        console.log('controlling temp');
+
+        if (weatherData.main.temp < minTemp) {
+            stopRobot()
+            console.log('its too cold');
+        }
     }
 }
 
-//Statring a recurring event 
-//Runs cleaningStatus every "syncInterval" 
-setInterval(cleaningStatus, syncInterval)
-//Runs safeWeather
-setInterval(safeWeather, 1 * 60000)
+    //Statring a recurring event 
+    //Runs cleaningStatus every "syncInterval" 
+    setInterval(cleaningStatus, syncInterval)
+    //Runs safeWeather
+    setInterval(safeWeather, 600)
+    // 30000
+    //setInterval(safeWeather, 5000)
 
-//setInterval(safeWeather, 5000)
+
+    /**
+     * The start-command called from the rest service
+     * calls startRobot();
+     * sets robotIsRunning = true;
+     * and return 200: robot started
+     */
+    exports.start = function (req, res) {
+        startRobot();
+        robotIsRunning = true;
+        // startRobot();
+        res.status(200).json({ msg: "robot started" });
+    };
+
+    /**
+     * The stop-command called from the rest service
+     * calls stopRobot();
+     * sets robotIsRunning = false;
+     * and return 200: robot stopped
+     */
+    exports.stop = function (req, res) {
+        stopRobot();
+        robotIsRunning = false
+        res.status(200).json({ msg: "robot stopped" });
+    };
+
+    /**
+     * The status-command called from the rest service
+     * returns 200 and robotIsRunning, isDone,
+     */
+    exports.status = function (req, res) {
+        console.log('robotIsRunning ' + robotIsRunning);
+        res.status(200).json({ robotIsRunning: robotIsRunning, isDone: isDone });
+    };
+
+    /**
+     * updates weatherData
+     * If the last downloaded weather data us older than 10 minutes it downloads new data from openweather
+     */
+    getNewWeather = function () {
+
+        //waiting 10 minutes between updating weather info ( provide only updates every ten minutes)
+        if (weatherData.created_at && weatherData.created_at < weatherData.created_at.getTime() + 10 * 60000) {
+            console.log('Loading weather');
+
+        } else {
+            //downloading weatherdata
+            console.log('Downloading weather');
+
+            http.get(wUrl, function (response) {
+                // Continuously update stream with data
+                var body = '';
+                response.on('data', function (d) {
+                    body += d;
+                });
+                response.on('end', function () {
+                    var jsonObject = JSON.parse(body);
 
 
-/**
- * The start-command called from the rest service
- * calls startRobot();
- * sets robotIsRunning = true;
- * and return 200: robot started
- */
-exports.start = function (req, res) {
-    startRobot();
-    robotIsRunning = true;
-    // startRobot();
-    res.status(200).json({ msg: "robot started" });
-};
-
-/**
- * The stop-command called from the rest service
- * calls stopRobot();
- * sets robotIsRunning = false;
- * and return 200: robot stopped
- */
-exports.stop = function (req, res) {
-    stopRobot();
-    robotIsRunning = false
-    res.status(200).json({ msg: "robot stopped" });
-};
-
-/**
- * The status-command called from the rest service
- * returns 200 and robotIsRunning, isDone,
- */
-exports.status = function (req, res) {
-    console.log('robotIsRunning ' + robotIsRunning);
-    res.status(200).json({ robotIsRunning: robotIsRunning, isDone: isDone });
-};
-
-/**
- * updates weatherData
- * If the last downloaded weather data us older than 10 minutes it downloads new data from openweather
- */
-getNewWeather = function () {
-
-    //waiting 10 minutes between updating weather info ( provide only updates every ten minutes)
-    if (weatherData.created_at && weatherData.created_at < weatherData.created_at.getTime() + 10 * 60000) {
-        console.log('Loading weather');
-
-    } else {
-        //downloading weatherdata
-        console.log('Downloading weather');
-
-        http.get(wUrl, function (response) {
-            // Continuously update stream with data
-            var body = '';
-            response.on('data', function (d) {
-                body += d;
+                    jsonObject.created_at = new Date();
+                    weatherData = jsonObject;
+                });
             });
-            response.on('end', function () {
-                var jsonObject = JSON.parse(body);
+        }
+        return weatherData
 
-
-                jsonObject.created_at = new Date();
-                weatherData = jsonObject;
-            });
-        });
-    }
-    return weatherData
-
-}
-
-
-//api id 92560990856b47ee7dfbba79557d93d
-var wUrl = 'http://api.openweathermap.org/data/2.5/weather?lat=56.153&lon=10.2049&units=metric&APPID=92560990856b47ee7dfbba79557d93de'
-
-/**
- * the weather-command called from the rest service
- * If the last downloaded weather data us older than 10 minutes it downloads new data from openweather
- * and returns 200 and the weather data
- */
-exports.weather = function (req, res) {
-
-    //waiting 10 minutes between updating weather info ( provide only updates every ten minutes)
-    if (weatherData.created_at && weatherData.created_at < weatherData.created_at.getTime() + 10 * 60000) {
-        console.log('Loading weather');
-
-        res.status(200).json(weatherData);
-    } else {
-        //downloading weatherdata
-        console.log('Downloading weather');
-
-        return http.get(wUrl, function (response) {
-            // Continuously update stream with data
-            var body = '';
-            response.on('data', function (d) {
-                body += d;
-            });
-            response.on('end', function () {
-                var jsonObject = JSON.parse(body);
-                res.status(200).json(jsonObject);
-
-                jsonObject.created_at = new Date();
-                weatherData = jsonObject;
-
-                // db.collection('weather').insertOne(jsonObject)
-            });
-        });
     }
 
-}
+
+    //api id 92560990856b47ee7dfbba79557d93d
+    var wUrl = 'http://api.openweathermap.org/data/2.5/weather?lat=56.153&lon=10.2049&units=metric&APPID=92560990856b47ee7dfbba79557d93de'
+
+    /**
+     * the weather-command called from the rest service
+     * If the last downloaded weather data us older than 10 minutes it downloads new data from openweather
+     * and returns 200 and the weather data
+     */
+    exports.weather = function (req, res) {
+
+        //waiting 10 minutes between updating weather info ( provide only updates every ten minutes)
+        if (weatherData.created_at && weatherData.created_at < weatherData.created_at.getTime() + 10 * 60000) {
+            console.log('Loading weather');
+
+            res.status(200).json(weatherData);
+        } else {
+            //downloading weatherdata
+            console.log('Downloading weather');
+
+            return http.get(wUrl, function (response) {
+                // Continuously update stream with data
+                var body = '';
+                response.on('data', function (d) {
+                    body += d;
+                });
+                response.on('end', function () {
+                    var jsonObject = JSON.parse(body);
+                    res.status(200).json(jsonObject);
+
+                    jsonObject.created_at = new Date();
+                    weatherData = jsonObject;
+
+                    // db.collection('weather').insertOne(jsonObject)
+                });
+            });
+        }
+
+    }
